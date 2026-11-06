@@ -24,7 +24,7 @@ async def get_puuid(game_name, tag_line):
         # TODO response handler
 
 
-async def get_rank(puuid):
+async def get_rank_data(puuid):
     riot_api_key = os.getenv("RIOT_API_KEY")
 
     headers = {"X-Riot-Token": riot_api_key}
@@ -38,10 +38,9 @@ async def get_rank(puuid):
 
 async def main():
     load_dotenv()
-    account = await get_puuid("Alseus", "NA1")
-    print(account["puuid"])
-    rank = await get_rank(account["puuid"])
-    return rank
+    account = await get_puuid("FlSHlE", "memes")
+    rank_data = await get_rank_data(account["puuid"])
+    return rank_data
 
 
 if __name__ == "__main__":
