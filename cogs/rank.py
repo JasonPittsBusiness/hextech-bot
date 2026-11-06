@@ -6,7 +6,7 @@ class Rank(commands.Cog):
         self.bot = bot
 
     @commands.hybrid_command()
-    async def rank(self, ctx, message: str):
+    async def rank(self, ctx, *, message: str):
         await ctx.send(message)
 
 
