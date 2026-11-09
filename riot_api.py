@@ -18,10 +18,10 @@ async def get_puuid(game_name, tag_line):
             f"{AMERICAS_BASE_URL}/riot/account/v1/accounts/by-riot-id/{game_name}/{tag_line}"
         ) as resp,
     ):
+        if resp.status != 200:
+            return None
         account = await resp.json()
         return account
-
-        # TODO response handler
 
 
 async def get_rank_data(puuid):
@@ -32,8 +32,8 @@ async def get_rank_data(puuid):
         aiohttp.ClientSession(headers=headers) as session,
         session.get(f"{NA1_BASE_URL}/lol/league/v4/entries/by-puuid/{puuid}") as resp,
     ):
-        account = await resp.json()
-        return account
+        rank_data = await resp.json()
+        return rank_data
 
 
 async def main():
