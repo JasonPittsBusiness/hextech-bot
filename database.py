@@ -9,7 +9,8 @@ async def init_db():
             "CREATE TABLE IF NOT EXISTS players(puuid TEXT PRIMARY KEY, game_name TEXT, game_tag TEXT, discord_id INTEGER)"
         )
         await db.execute(
-            "CREATE TABLE IF NOT EXISTS rank(puuid TEXT PRIMARY KEY, tier TEXT, rank TEXT, league_points INTEGER)"
+            """CREATE TABLE IF NOT EXISTS rank(puuid TEXT, queue_type TEXT, tier TEXT, rank TEXT, 
+            league_points INTEGER, updated_at TEXT DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY(puuid, queue_type))"""
         )
 
 
