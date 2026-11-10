@@ -17,32 +17,36 @@ class Rank(commands.Cog):
                 f"'{message}' is not a valid format. Please use !rank name#tag"
             )
             return
+        # TODO handle case sensistivity
         puuid = await database.get_player(game_name, game_tag)
         if puuid is None:
             account = await riot_api.get_puuid(game_name, game_tag)
             if account is not None:
                 puuid = account["puuid"]
+                await database.upsert_player(puuid, game_name, game_tag, ctx.author.id)
             if account is None:
                 await ctx.send(
                     f"'{message}' not found. Check the name or try again later."
                 )
                 return
-        await database.upsert_player(puuid, game_name, game_tag, ctx.author.id)
-        rank_data = await riot_api.get_rank_data(puuid)
-        for rank in rank_data:
-            await database.upsert_rank(
-                puuid,
-                rank["queueType"],
-                rank["tier"],
-                rank["rank"],
-                rank["leaguePoints"],
-            )
-            if rank["queueType"] == "RANKED_SOLO_5x5":
-                await ctx.send(
-                    f"{message} is currently {rank['tier']} {rank['rank']} {rank['leaguePoints']} LP"
+        # TODO add ranks other than solo
+        rank_data = await database.get_rank(puuid, "RANKED_SOLO_5x5")
+        if rank_data is None:
+            rank_data = await riot_api.get_rank_data(puuid)
+            for rank in rank_data:
+                await database.upsert_rank(
+                    puuid,
+                    rank["queueType"],
+                    rank["tier"],
+                    rank["rank"],
+                    rank["leaguePoints"],
                 )
-                return
-        await ctx.send(f"{message} is currently unranked")
+        rank_data = await database.get_rank(puuid, "RANKED_SOLO_5x5")
+        if rank_data is None:
+            await ctx.send(f"{message} is currently unranked")
+            return
+        tier, rank, leaguepoints = rank_data
+        await ctx.send(f"{message} is currently {tier} {rank} {leaguepoints} LP")
 
 
 async def setup(bot):
