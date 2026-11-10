@@ -1,8 +1,7 @@
 # .dockerignore
 .env
 .venv
-.git
+.git*
 __pycache__
-.gitattributes
-.gitignore
 .vscode
+*.db

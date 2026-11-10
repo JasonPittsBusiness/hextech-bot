@@ -38,7 +38,7 @@ async def get_rank_data(puuid):
 
 async def main():
     load_dotenv()
-    account = await get_puuid("FlSHlE", "memes")
+    account = await get_puuid("Alseus", "NA1")
     rank_data = await get_rank_data(account["puuid"])
     return rank_data
 
