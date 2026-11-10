@@ -14,5 +14,16 @@ async def init_db():
         )
 
 
+async def add_player(puuid, game_name, game_tag, discord_id):
+    data = (puuid, game_name, game_tag, discord_id)
+    async with aiosqlite.connect("hextech.db") as db:
+        await db.execute(
+            "INSERT INTO players VALUES(?, ?, ?, ?) ON CONFLICT(puuid) DO UPDATE SET game_name = excluded.game_name, game_tag = excluded.game_tag",
+            data,
+        )
+        await db.commit()
+
+
 if __name__ == "__main__":
     asyncio.run(init_db())
+    asyncio.run(add_player("your_puuid", "your_game_name", "your_game_tag", 1234))

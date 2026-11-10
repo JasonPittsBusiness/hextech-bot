@@ -5,6 +5,8 @@ import discord
 from discord.ext import commands
 from dotenv import load_dotenv
 
+import database
+
 load_dotenv()
 
 bot_token = os.getenv("BOT_TOKEN")
@@ -17,6 +19,7 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 
 async def main():
     discord.utils.setup_logging()
+    await database.init_db()
     await bot.load_extension("cogs.rank")
     await bot.start(bot_token)
 
