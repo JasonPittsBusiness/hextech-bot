@@ -8,6 +8,14 @@ AMERICAS_BASE_URL = "https://americas.api.riotgames.com"
 NA1_BASE_URL = "https://na1.api.riotgames.com"
 
 
+RIOT_QUEUES = {
+    "solo": "RANKED_SOLO_5x5",
+    "flex": "RANKED_FLEX_SR",
+    "5s": "RANKED_PREMADE_5x5",
+    "premade": "RANKED_PREMADE_5x5",
+}
+
+
 async def get_puuid(game_name, tag_line):
     riot_api_key = os.getenv("RIOT_API_KEY")
 

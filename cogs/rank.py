@@ -12,9 +12,14 @@ class Rank(commands.Cog):
     async def rank(self, ctx, *, message: str):
         try:
             game_name, game_tag = message.split("#")
-        except ValueError:
+            tag_parts = game_tag.split()
+            queue = "solo"
+            if len(tag_parts) > 1:
+                game_tag, queue = tag_parts
+            queue_type = riot_api.RIOT_QUEUES[queue]
+        except (ValueError, KeyError):
             await ctx.send(
-                f"'{message}' is not a valid format. Please use !rank name#tag"
+                f"'{message}' is not a valid format. Please use !rank \"name#tag\" solo, flex, premade, or 5s"
             )
             return
         # TODO handle case sensistivity
@@ -29,8 +34,7 @@ class Rank(commands.Cog):
                     f"'{message}' not found. Check the name or try again later."
                 )
                 return
-        # TODO add ranks other than solo
-        rank_data = await database.get_rank(puuid, "RANKED_SOLO_5x5")
+        rank_data = await database.get_rank(puuid, queue_type)
         if rank_data is None:
             rank_data = await riot_api.get_rank_data(puuid)
             for rank in rank_data:
@@ -41,12 +45,14 @@ class Rank(commands.Cog):
                     rank["rank"],
                     rank["leaguePoints"],
                 )
-        rank_data = await database.get_rank(puuid, "RANKED_SOLO_5x5")
+        rank_data = await database.get_rank(puuid, queue_type)
         if rank_data is None:
-            await ctx.send(f"{message} is currently unranked")
+            await ctx.send(f"{message} is currently unranked in {queue}")
             return
         tier, rank, leaguepoints = rank_data
-        await ctx.send(f"{message} is currently {tier} {rank} {leaguepoints} LP")
+        await ctx.send(
+            f"{message} is currently {tier} {rank} {leaguepoints} LP in {queue}"
+        )
 
 
 async def setup(bot):
