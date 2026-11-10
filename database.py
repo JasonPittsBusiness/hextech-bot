@@ -18,6 +18,18 @@ async def init_db():
         )
 
 
+async def get_player(game_name, game_tag):
+    async with aiosqlite.connect("hextech.db") as db:
+        data = (game_name, game_tag)
+        cursor = await db.execute(
+            "SELECT puuid FROM players WHERE game_name = ? AND game_tag = ?", data
+        )
+        row = await cursor.fetchone()
+        if row is None:
+            return None
+        return row[0]
+
+
 async def upsert_player(puuid, game_name, game_tag, discord_id):
     data = (puuid, game_name, game_tag, discord_id)
     async with aiosqlite.connect("hextech.db") as db:
@@ -69,3 +81,4 @@ if __name__ == "__main__":
             68,
         )
     )
+    asyncio.run(get_player("your_game_name", "your_game_tag"))
