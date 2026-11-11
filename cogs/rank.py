@@ -1,3 +1,4 @@
+import discord
 from discord.ext import commands
 
 import database
@@ -11,11 +12,11 @@ class Rank(commands.Cog):
     @commands.hybrid_command()
     async def rank(self, ctx, *, message: str):
         try:
-            game_name, game_tag = message.split("#")
-            tag_parts = game_tag.split()
+            game_name, tag_line = message.split("#")
+            tag_parts = tag_line.split()
             queue = "solo"
             if len(tag_parts) > 1:
-                game_tag, queue = tag_parts
+                tag_line, queue = tag_parts
             queue_type = riot_api.RIOT_QUEUES[queue]
         except (ValueError, KeyError):
             await ctx.send(
@@ -23,17 +24,25 @@ class Rank(commands.Cog):
             )
             return
         # TODO handle case sensistivity
-        puuid = await database.get_player(game_name, game_tag)
-        if puuid is None:
-            account = await riot_api.get_puuid(game_name, game_tag)
+        player = await database.get_player(game_name, tag_line)
+        if player is None:
+            account = await riot_api.get_puuid(game_name, tag_line)
+            puuid = account["puuid"]
+            game_name = account["gameName"]
+            tag_line = account["tagLine"]
             if account is not None:
-                puuid = account["puuid"]
-                await database.upsert_player(puuid, game_name, game_tag, ctx.author.id)
+                await database.upsert_player(
+                    account["puuid"],
+                    account["gameName"],
+                    account["tagLine"],
+                )
             if account is None:
                 await ctx.send(
                     f"'{message}' not found. Check the name or try again later."
                 )
                 return
+        else:
+            puuid, game_name, tag_line = player
         rank_data = await database.get_rank(puuid, queue_type)
         if rank_data is None:
             rank_data = await riot_api.get_rank_data(puuid)
@@ -59,7 +68,34 @@ class Rank(commands.Cog):
             return
         tier, rank, leaguepoints = rank_data
         await ctx.send(
-            f"{message} is currently {tier} {rank} {leaguepoints} LP in {queue}"
+            f"{game_name}#{tag_line} is currently {tier} {rank} {leaguepoints} LP in {queue}"
+        )
+
+    @commands.hybrid_command()
+    async def claim(self, ctx, mention: discord.Member, *, message: str):
+        try:
+            game_name, tag_line = message.split("#")
+        except ValueError:
+            await ctx.send(
+                f"'{message}' is not a valid format. Please use !claim @discord_mention name#tag"
+            )
+            return
+        player = await database.get_player(game_name, tag_line)
+        if player is None:
+            await ctx.send(
+                f"'{message}' not found. Check the name or try the !rank command to add the user to the database first"
+            )
+            return
+        puuid, game_name, tag_line = player
+        await ctx.send(
+            f"The League account {game_name}#{tag_line} was claimed by {mention.mention}"
+        )
+        await database.update_player_discord_owner(puuid, mention.id)
+
+    @claim.error
+    async def claim_error(self, ctx: commands.Context, error: commands.CommandError):
+        await ctx.send(
+            f"{ctx.message.content} is not a valid format. Please use !claim @discord_mention name#tag"
         )
 
 

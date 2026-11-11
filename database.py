@@ -8,8 +8,8 @@ async def init_db():
         await db.execute(
             """CREATE TABLE IF NOT EXISTS players(
             puuid TEXT PRIMARY KEY, 
-            game_name TEXT, 
-            game_tag TEXT, 
+            game_name TEXT COLLATE NOCASE, 
+            tag_line TEXT COLLATE NOCASE, 
             discord_id INTEGER
             )"""
         )
@@ -37,32 +37,45 @@ async def init_db():
         )
 
 
-async def get_player(game_name, game_tag):
+async def get_player(game_name, tag_line):
     async with aiosqlite.connect("hextech.db") as db:
-        data = (game_name, game_tag)
+        data = (game_name, tag_line)
         cursor = await db.execute(
-            """SELECT puuid 
+            """SELECT puuid, game_name, tag_line 
             FROM players 
             WHERE game_name = ? 
-            AND game_tag = ?""",
+            AND tag_line = ?""",
             data,
         )
         row = await cursor.fetchone()
         if row is None:
             return None
-        return row[0]
+        return row
 
 
-async def upsert_player(puuid, game_name, game_tag, discord_id):
-    data = (puuid, game_name, game_tag, discord_id)
+async def upsert_player(puuid, game_name, tag_line):
+    data = (puuid, game_name, tag_line)
     async with aiosqlite.connect("hextech.db") as db:
         await db.execute(
-            """INSERT INTO players 
-            VALUES(?, ?, ?, ?) 
+            """INSERT INTO players (puuid, game_name, tag_line)
+            VALUES(?, ?, ?) 
             ON CONFLICT(puuid) 
             DO UPDATE SET 
                 game_name = excluded.game_name, 
-                game_tag = excluded.game_tag""",
+                tag_line = excluded.tag_line""",
+            data,
+        )
+        await db.commit()
+
+
+async def update_player_discord_owner(puuid, discord_id):
+    data = (discord_id, puuid)
+    async with aiosqlite.connect("hextech.db") as db:
+        await db.execute(
+            """UPDATE players 
+            SET discord_id = ? 
+            WHERE puuid = ? 
+            """,
             data,
         )
         await db.commit()
@@ -117,7 +130,7 @@ async def insert_rank_history(puuid, queue_type, tier, rank, league_points):
 
 if __name__ == "__main__":
     asyncio.run(init_db())
-    asyncio.run(upsert_player("your_puuid", "your_game_name", "your_game_tag", 1234))
+    asyncio.run(upsert_player("your_puuid", "your_game_name", "your_tag_line"))
     asyncio.run(
         upsert_rank(
             "your_puuid",
@@ -136,5 +149,5 @@ if __name__ == "__main__":
             68,
         )
     )
-    asyncio.run(get_player("your_game_name", "your_game_tag"))
+    asyncio.run(get_player("your_game_name", "your_tag_line"))
     asyncio.run(get_rank("your_puuid", "RANKED_DUO_5X5"))
