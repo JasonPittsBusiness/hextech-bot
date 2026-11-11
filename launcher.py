@@ -14,7 +14,13 @@ bot_token = os.getenv("BOT_TOKEN")
 intents = discord.Intents.default()
 intents.message_content = True
 
-bot = commands.Bot(command_prefix="!", intents=intents)
+bot = commands.Bot(
+    command_prefix="!",
+    intents=intents,
+    help_command=commands.DefaultHelpCommand(
+        sort_commands=False, no_category="General", show_parameter_descriptions=False
+    ),
+)
 
 
 async def main():

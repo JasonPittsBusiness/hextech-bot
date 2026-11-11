@@ -9,8 +9,10 @@ class Rank(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.hybrid_command()
+    @commands.hybrid_command(usage="<name#tag> [queue]")
     async def rank(self, ctx, *, message: str):
+        """Returns the rank of a player in a specified queue.
+        Use the format !rank \"name#tag\" solo, flex, premade, or 5s"""
         try:
             game_name, tag_line = message.split("#")
             tag_parts = tag_line.split()
@@ -71,8 +73,10 @@ class Rank(commands.Cog):
             f"{game_name}#{tag_line} is currently {tier} {rank} {leaguepoints} LP in {queue}"
         )
 
-    @commands.hybrid_command()
+    @commands.hybrid_command(usage="<discord_user> <name#tag>")
     async def claim(self, ctx, mention: discord.Member, *, message: str):
+        """Claim an account that has already checked with !rank
+        !claim @discord_mention name#tag"""
         try:
             game_name, tag_line = message.split("#")
         except ValueError:
@@ -94,6 +98,7 @@ class Rank(commands.Cog):
 
     @claim.error
     async def claim_error(self, ctx: commands.Context, error: commands.CommandError):
+        """Gives the user an error message on CommandError"""
         await ctx.send(
             f"{ctx.message.content} is not a valid format. Please use !claim @discord_mention name#tag"
         )
