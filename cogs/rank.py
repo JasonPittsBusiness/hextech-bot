@@ -22,7 +22,7 @@ class Rank(commands.Cog):
             queue_type = riot_api.RIOT_QUEUES[queue]
         except (ValueError, KeyError):
             await ctx.send(
-                f"'{message}' is not a valid format. Please use !rank \"name#tag\" solo, flex, premade, or 5s"
+                f"'{message}' is not a valid format. Use !rank \"name#tag\" solo, flex, premade, or 5s"
             )
             return
         # TODO handle case sensistivity
@@ -87,7 +87,7 @@ class Rank(commands.Cog):
         player = await database.get_player(game_name, tag_line)
         if player is None:
             await ctx.send(
-                f"'{message}' not found. Check the name or try the !rank command to add the user to the database first"
+                f"'{message}' not found. Check the name or try !rank to add the user to the database first"
             )
             return
         puuid, game_name, tag_line = player

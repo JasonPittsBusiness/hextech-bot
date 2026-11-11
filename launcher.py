@@ -27,6 +27,7 @@ async def main():
     discord.utils.setup_logging()
     await database.init_db()
     await bot.load_extension("cogs.rank")
+    await bot.load_extension("cogs.leaderboard")
     await bot.start(bot_token)
 
 

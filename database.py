@@ -35,6 +35,13 @@ async def init_db():
             PRIMARY KEY(puuid, queue_type, updated_at)
             )"""
         )
+        await db.execute(
+            """CREATE TABLE IF NOT EXISTS leaderboard_players(
+            puuid TEXT, 
+            guild_id INTEGER,
+            PRIMARY KEY(puuid, guild_id)
+            )"""
+        )
 
 
 async def get_player(game_name, tag_line):
@@ -126,6 +133,21 @@ async def insert_rank_history(puuid, queue_type, tier, rank, league_points):
             data,
         )
         await db.commit()
+
+
+async def insert_leaderboard_player(puuid, guild_id):
+    data = (puuid, guild_id)
+    async with aiosqlite.connect("hextech.db") as db:
+        cursor = await db.execute(
+            """INSERT INTO leaderboard_players (puuid, guild_id)
+            VALUES (?, ?)
+            ON CONFLICT(puuid, guild_id)
+            DO NOTHING
+            """,
+            data,
+        )
+        await db.commit()
+        return cursor.rowcount
 
 
 if __name__ == "__main__":
