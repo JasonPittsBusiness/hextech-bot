@@ -9,7 +9,8 @@ class Leaderboard(commands.Cog):
 
     @commands.hybrid_group(usage="pass")
     async def leaderboard(self, ctx):
-        pass
+        leaderboard = await database.get_leaderboard_players(ctx.guild.id)
+        await ctx.send(leaderboard)
 
     @leaderboard.command(usage="<name#tag>")
     async def add(self, ctx, *, message: str):

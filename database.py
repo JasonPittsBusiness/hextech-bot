@@ -135,6 +135,24 @@ async def insert_rank_history(puuid, queue_type, tier, rank, league_points):
         await db.commit()
 
 
+async def get_leaderboard_players(guild_id):
+    data = (guild_id,)
+    async with aiosqlite.connect("hextech.db") as db:
+        cursor = await db.execute(
+            """
+        SELECT game_name, tag_line, tier, rank, league_points
+        FROM leaderboard_players
+        LEFT OUTER JOIN ranks
+        ON leaderboard_players.puuid = ranks.puuid
+        AND ranks.queue_type = 'RANKED_SOLO_5x5'
+        JOIN players
+        ON leaderboard_players.puuid = players.puuid
+        WHERE guild_id = ?""",
+            data,
+        )
+        return await cursor.fetchall()
+
+
 async def insert_leaderboard_player(puuid, guild_id):
     data = (puuid, guild_id)
     async with aiosqlite.connect("hextech.db") as db:
