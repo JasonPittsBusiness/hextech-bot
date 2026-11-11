@@ -38,6 +38,9 @@ class Rank(commands.Cog):
         if rank_data is None:
             rank_data = await riot_api.get_rank_data(puuid)
             for rank in rank_data:
+                old_rank_data = await database.get_rank(
+                    puuid, rank["queueType"], stale_check=False
+                )
                 await database.upsert_rank(
                     puuid,
                     rank["queueType"],
@@ -45,6 +48,11 @@ class Rank(commands.Cog):
                     rank["rank"],
                     rank["leaguePoints"],
                 )
+                new_rank_data = await database.get_rank(puuid, rank["queueType"])
+                if new_rank_data != old_rank_data:
+                    await database.insert_rank_history(
+                        puuid, rank["queueType"], *new_rank_data
+                    )
         rank_data = await database.get_rank(puuid, queue_type)
         if rank_data is None:
             await ctx.send(f"{message} is currently unranked in {queue}")

@@ -68,15 +68,17 @@ async def upsert_player(puuid, game_name, game_tag, discord_id):
         await db.commit()
 
 
-async def get_rank(puuid, queue_type):
+async def get_rank(puuid, queue_type, stale_check=True):
     async with aiosqlite.connect("hextech.db") as db:
         data = (puuid, queue_type)
+        query = """SELECT tier, rank, league_points 
+                    FROM ranks 
+                    WHERE puuid = ? 
+                    AND queue_type = ?"""
+        if stale_check:
+            query += " AND updated_at > datetime('now', '-60 seconds')"
         cursor = await db.execute(
-            """SELECT tier, rank, league_points 
-            FROM ranks 
-            WHERE puuid = ? 
-            AND queue_type = ? 
-            AND updated_at > datetime('now', '-60 seconds')""",
+            query,
             data,
         )
         row = await cursor.fetchone()
