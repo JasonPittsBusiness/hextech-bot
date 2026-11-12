@@ -38,8 +38,9 @@ class Leaderboard(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.hybrid_group(usage="pass")
+    @commands.hybrid_group()
     async def leaderboard(self, ctx):
+        """Posts the ranked solo leaderboard for this server"""
         leaderboard_players = await database.get_leaderboard_players(ctx.guild.id)
         leaderboard_players_sorted = sorted(
             leaderboard_players, key=_rank_sorter, reverse=True
@@ -69,6 +70,7 @@ class Leaderboard(commands.Cog):
 
     @leaderboard.command(usage="<name#tag>")
     async def add(self, ctx, *, message: str):
+        """Add a player to the leaderboard in this server"""
         try:
             game_name, tag_line = message.split("#")
         except ValueError:

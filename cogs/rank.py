@@ -11,7 +11,7 @@ class Rank(commands.Cog):
 
     @commands.hybrid_command(usage="<name#tag> [queue]")
     async def rank(self, ctx, *, message: str):
-        """Returns the rank of a player in a specified queue.
+        """Returns the rank of a player in a specified queue
         Use the format !rank \"name#tag\" solo, flex, premade, or 5s"""
         try:
             game_name, tag_line = message.split("#")
@@ -25,7 +25,6 @@ class Rank(commands.Cog):
                 f"'{message}' is not a valid format. Use !rank \"name#tag\" solo, flex, premade, or 5s"
             )
             return
-        # TODO handle case sensistivity
         player = await database.get_player(game_name, tag_line)
         if player is None:
             account = await riot_api.get_puuid(game_name, tag_line)
@@ -75,7 +74,7 @@ class Rank(commands.Cog):
 
     @commands.hybrid_command(usage="<discord_user> <name#tag>")
     async def claim(self, ctx, mention: discord.Member, *, message: str):
-        """Claim an account that has already checked with !rank
+        """Claim an account that has already been checked with !rank
         !claim @discord_mention name#tag"""
         try:
             game_name, tag_line = message.split("#")
