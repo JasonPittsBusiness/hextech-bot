@@ -2,6 +2,31 @@ from discord.ext import commands
 
 import database
 
+TIER_ORDER = [
+    "IRON",
+    "BRONZE",
+    "SILVER",
+    "GOLD",
+    "PLATINUM",
+    "EMERALD",
+    "DIAMOND",
+    "MASTER",
+    "GRANDMASTER",
+    "CHALLENGER",
+]
+
+RANK_ORDER = ["IV", "III", "II", "I"]
+
+
+def _rank_sorter(player_rank):
+    """Helper function to return tuple of ranked values for sorting on leaderboard"""
+    tier, rank, league_points = player_rank[2:]
+    if tier is None:
+        return -1, -1, -1
+    tier = TIER_ORDER.index(tier)
+    rank = RANK_ORDER.index(rank)
+    return tier, rank, league_points
+
 
 class Leaderboard(commands.Cog):
     def __init__(self, bot):
@@ -9,8 +34,11 @@ class Leaderboard(commands.Cog):
 
     @commands.hybrid_group(usage="pass")
     async def leaderboard(self, ctx):
-        leaderboard = await database.get_leaderboard_players(ctx.guild.id)
-        await ctx.send(leaderboard)
+        leaderboard_players = await database.get_leaderboard_players(ctx.guild.id)
+        leaderboard_players_sorted = sorted(
+            leaderboard_players, key=_rank_sorter, reverse=True
+        )
+        await ctx.send(leaderboard_players_sorted)
 
     @leaderboard.command(usage="<name#tag>")
     async def add(self, ctx, *, message: str):
