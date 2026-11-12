@@ -17,6 +17,12 @@ TIER_ORDER = [
 
 RANK_ORDER = ["IV", "III", "II", "I"]
 
+TIER_WIDTH = len(max(TIER_ORDER, key=len))
+
+RANK_WIDTH = len(max(RANK_ORDER, key=len))
+
+LP_WIDTH = 4
+
 
 def _rank_sorter(player_rank):
     """Helper function to return tuple of ranked values for sorting on leaderboard"""
@@ -38,7 +44,28 @@ class Leaderboard(commands.Cog):
         leaderboard_players_sorted = sorted(
             leaderboard_players, key=_rank_sorter, reverse=True
         )
-        await ctx.send(leaderboard_players_sorted)
+        name_width = 0
+        place_width = len(str(len(leaderboard_players_sorted)))
+        for player in leaderboard_players_sorted:
+            player_name_len = len(player[0]) + 1 + len(player[1])
+            name_width = max(name_width, player_name_len)
+        player_list = []
+        for place, player in enumerate(leaderboard_players_sorted, start=1):
+            player_name = f"{player[0]}#{player[1]}"
+            if player[2] is None:
+                player_name_padded = (
+                    f"{place:>{place_width}}. {player_name:<{name_width}} Unranked"
+                )
+                player_list.append(player_name_padded)
+                continue
+            player_name_padded = f"{place:>{place_width}}. {player_name:<{name_width}} {player[2]:<{TIER_WIDTH}} {player[3]:<{RANK_WIDTH}} {player[4]:>{LP_WIDTH}} LP"
+            player_list.append(player_name_padded)
+        header_width = len(max(player_list, key=len))
+        leaderboard_title = "Ranked Leaderboard"
+        leaderboard_content = "\n".join(player_list)
+        await ctx.send(
+            f"```\n{leaderboard_title:^{header_width}}\n{leaderboard_content}\n```"
+        )
 
     @leaderboard.command(usage="<name#tag>")
     async def add(self, ctx, *, message: str):
