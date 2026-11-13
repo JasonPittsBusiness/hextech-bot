@@ -1,9 +1,12 @@
 import datetime
+import logging
 from zoneinfo import ZoneInfo
 
 from discord.ext import commands, tasks
 
 import database
+
+logger = logging.getLogger(__name__)
 
 CENTRAL_TZ = ZoneInfo("America/Chicago")
 POST_TIME = [
@@ -127,9 +130,12 @@ class Leaderboard(commands.Cog):
     async def daily_leaderboard(self):
         subscribed_channels = await database.get_suscribed_channels()
         for guild in subscribed_channels:
-            leaderboard_content = await _build_leaderboard(guild[0])
-            channel = self.bot.get_channel(guild[1])
-            await channel.send(leaderboard_content)
+            try:
+                leaderboard_content = await _build_leaderboard(guild[0])
+                channel = self.bot.get_channel(guild[1])
+                await channel.send(leaderboard_content)
+            except Exception:
+                logger.exception("Subscribed channel is not valid")
 
     @daily_leaderboard.before_loop
     async def before_daily_leaderboard(self):
