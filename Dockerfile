@@ -8,6 +8,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 RUN useradd app
+RUN chown -R app /usr/src/app
 USER app
 
 CMD [ "python", "./launcher.py" ]
