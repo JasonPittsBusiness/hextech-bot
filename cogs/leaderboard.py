@@ -1,6 +1,15 @@
-from discord.ext import commands
+import datetime
+from zoneinfo import ZoneInfo
+
+from discord.ext import commands, tasks
 
 import database
+
+CENTRAL_TZ = ZoneInfo("America/Chicago")
+POST_TIME = [
+    datetime.time(hour=11, tzinfo=CENTRAL_TZ),
+    datetime.time(hour=23, tzinfo=CENTRAL_TZ),
+]
 
 TIER_ORDER = [
     "IRON",
@@ -35,6 +44,7 @@ def _rank_sorter(player_rank):
 
 
 async def _build_leaderboard(guild_id):
+    """Builds a leaderboard from a given guild_id"""
     leaderboard_players = await database.get_leaderboard_players(guild_id)
     leaderboard_players_sorted = sorted(
         leaderboard_players, key=_rank_sorter, reverse=True
@@ -64,6 +74,10 @@ async def _build_leaderboard(guild_id):
 class Leaderboard(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.daily_leaderboard.start()
+
+    def cog_unload(self):
+        self.daily_leaderboard.cancel()
 
     @commands.hybrid_group()
     async def leaderboard(self, ctx):
@@ -108,6 +122,20 @@ class Leaderboard(commands.Cog):
         await ctx.send(
             f"{ctx.channel.mention} is already subscribed to the daily !leaderboard"
         )
+
+    @tasks.loop(time=POST_TIME)
+    async def daily_leaderboard(self):
+        subscribed_channels = await database.get_suscribed_channels()
+        for guild in subscribed_channels:
+            leaderboard_content = await _build_leaderboard(guild[0])
+            channel = self.bot.get_channel(guild[1])
+            await channel.send(leaderboard_content)
+
+    @daily_leaderboard.before_loop
+    async def before_daily_leaderboard(self):
+        await self.bot.wait_until_ready()
+
+    # time = datetime.time(hour=8, minute=30, tzinfo=datetime.timezone.utc)
 
 
 async def setup(bot):

@@ -7,44 +7,44 @@ async def init_db():
     async with aiosqlite.connect("hextech.db") as db:
         await db.execute(
             """CREATE TABLE IF NOT EXISTS players(
-            puuid TEXT PRIMARY KEY, 
-            game_name TEXT COLLATE NOCASE, 
-            tag_line TEXT COLLATE NOCASE, 
+            puuid TEXT PRIMARY KEY,
+            game_name TEXT COLLATE NOCASE,
+            tag_line TEXT COLLATE NOCASE,
             discord_id INTEGER
             )"""
         )
         await db.execute(
             """CREATE TABLE IF NOT EXISTS ranks(
-            puuid TEXT, 
-            queue_type TEXT, 
-            tier TEXT, 
-            rank TEXT, 
-            league_points INTEGER, 
+            puuid TEXT,
+            queue_type TEXT,
+            tier TEXT,
+            rank TEXT,
+            league_points INTEGER,
             updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY(puuid, queue_type)
             )"""
         )
         await db.execute(
             """CREATE TABLE IF NOT EXISTS rank_history(
-            puuid TEXT, 
-            queue_type TEXT, 
-            tier TEXT, 
-            rank TEXT, 
-            league_points INTEGER, 
+            puuid TEXT,
+            queue_type TEXT,
+            tier TEXT,
+            rank TEXT,
+            league_points INTEGER,
             updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY(puuid, queue_type, updated_at)
             )"""
         )
         await db.execute(
             """CREATE TABLE IF NOT EXISTS leaderboard_players(
-            puuid TEXT, 
+            puuid TEXT,
             guild_id INTEGER,
             PRIMARY KEY(puuid, guild_id)
             )"""
         )
         await db.execute(
             """CREATE TABLE IF NOT EXISTS subscribed_channels(
-            guild_id integer, 
+            guild_id integer,
             channel_id INTEGER,
             PRIMARY KEY(guild_id, channel_id)
             )"""
@@ -55,9 +55,9 @@ async def get_player(game_name, tag_line):
     async with aiosqlite.connect("hextech.db") as db:
         data = (game_name, tag_line)
         cursor = await db.execute(
-            """SELECT puuid, game_name, tag_line 
-            FROM players 
-            WHERE game_name = ? 
+            """SELECT puuid, game_name, tag_line
+            FROM players
+            WHERE game_name = ?
             AND tag_line = ?""",
             data,
         )
@@ -72,10 +72,10 @@ async def upsert_player(puuid, game_name, tag_line):
     async with aiosqlite.connect("hextech.db") as db:
         await db.execute(
             """INSERT INTO players (puuid, game_name, tag_line)
-            VALUES(?, ?, ?) 
-            ON CONFLICT(puuid) 
-            DO UPDATE SET 
-                game_name = excluded.game_name, 
+            VALUES(?, ?, ?)
+            ON CONFLICT(puuid)
+            DO UPDATE SET
+                game_name = excluded.game_name,
                 tag_line = excluded.tag_line""",
             data,
         )
@@ -86,9 +86,9 @@ async def update_player_discord_owner(puuid, discord_id):
     data = (discord_id, puuid)
     async with aiosqlite.connect("hextech.db") as db:
         await db.execute(
-            """UPDATE players 
-            SET discord_id = ? 
-            WHERE puuid = ? 
+            """UPDATE players
+            SET discord_id = ?
+            WHERE puuid = ?
             """,
             data,
         )
@@ -98,9 +98,9 @@ async def update_player_discord_owner(puuid, discord_id):
 async def get_rank(puuid, queue_type, stale_check=True):
     async with aiosqlite.connect("hextech.db") as db:
         data = (puuid, queue_type)
-        query = """SELECT tier, rank, league_points 
-                    FROM ranks 
-                    WHERE puuid = ? 
+        query = """SELECT tier, rank, league_points
+                    FROM ranks
+                    WHERE puuid = ?
                     AND queue_type = ?"""
         if stale_check:
             query += " AND updated_at > datetime('now', '-60 seconds')"
@@ -118,13 +118,13 @@ async def upsert_rank(puuid, queue_type, tier, rank, league_points):
     data = (puuid, queue_type, tier, rank, league_points)
     async with aiosqlite.connect("hextech.db") as db:
         await db.execute(
-            """INSERT INTO ranks (puuid, queue_type, tier, rank, league_points) 
-            VALUES(?, ?, ?, ?, ?) 
-            ON CONFLICT(puuid, queue_type) 
-            DO UPDATE SET tier = 
-                excluded.tier, 
-                rank = excluded.rank, 
-                league_points = excluded.league_points, 
+            """INSERT INTO ranks (puuid, queue_type, tier, rank, league_points)
+            VALUES(?, ?, ?, ?, ?)
+            ON CONFLICT(puuid, queue_type)
+            DO UPDATE SET tier =
+                excluded.tier,
+                rank = excluded.rank,
+                league_points = excluded.league_points,
                 updated_at = CURRENT_TIMESTAMP""",
             data,
         )
@@ -135,7 +135,7 @@ async def insert_rank_history(puuid, queue_type, tier, rank, league_points):
     data = (puuid, queue_type, tier, rank, league_points)
     async with aiosqlite.connect("hextech.db") as db:
         await db.execute(
-            """INSERT INTO rank_history (puuid, queue_type, tier, rank, league_points) 
+            """INSERT INTO rank_history (puuid, queue_type, tier, rank, league_points)
             VALUES(?, ?, ?, ?, ?)""",
             data,
         )
@@ -179,9 +179,9 @@ async def insert_subscribed_channel(guild_id, channel_id):
     data = (guild_id, channel_id)
     async with aiosqlite.connect("hextech.db") as db:
         cursor = await db.execute(
-            """INSERT INTO subscribed_channels(guild_id, channel_id) 
-            VALUES(?, ?) 
-            ON CONFLICT(guild_id, channel_id) 
+            """INSERT INTO subscribed_channels(guild_id, channel_id)
+            VALUES(?, ?)
+            ON CONFLICT(guild_id, channel_id)
             DO NOTHING""",
             data,
         )
