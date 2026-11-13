@@ -94,6 +94,21 @@ class Leaderboard(commands.Cog):
             return
         await ctx.send(f"{game_name}#{tag_line} is already on the !leaderboard")
 
+    @leaderboard.command()
+    async def subscribe(self, ctx):
+        """Subscribe the current channel to the daily leadboard"""
+        guild_id = ctx.guild.id
+        channel_id = ctx.channel.id
+        result = await database.insert_subscribed_channel(guild_id, channel_id)
+        if result > 0:
+            await ctx.send(
+                f"{ctx.channel.mention} has been subscribed to the daily !leaderboard"
+            )
+            return
+        await ctx.send(
+            f"{ctx.channel.mention} is already subscribed to the daily !leaderboard"
+        )
+
 
 async def setup(bot):
     await bot.add_cog(Leaderboard(bot))

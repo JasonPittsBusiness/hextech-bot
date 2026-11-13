@@ -178,14 +178,15 @@ async def insert_leaderboard_player(puuid, guild_id):
 async def insert_subscribed_channel(guild_id, channel_id):
     data = (guild_id, channel_id)
     async with aiosqlite.connect("hextech.db") as db:
-        await db.execute(
+        cursor = await db.execute(
             """INSERT INTO subscribed_channels(guild_id, channel_id) 
             VALUES(?, ?) 
             ON CONFLICT(guild_id, channel_id) 
             DO NOTHING""",
             data,
         )
-    await db.commit()
+        await db.commit()
+        return cursor.rowcount
 
 
 async def get_suscribed_channels():
