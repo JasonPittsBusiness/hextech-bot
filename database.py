@@ -42,6 +42,13 @@ async def init_db():
             PRIMARY KEY(puuid, guild_id)
             )"""
         )
+        await db.execute(
+            """CREATE TABLE IF NOT EXISTS subscribed_channels(
+            guild_id integer, 
+            channel_id INTEGER,
+            PRIMARY KEY(guild_id, channel_id)
+            )"""
+        )
 
 
 async def get_player(game_name, tag_line):
@@ -168,26 +175,28 @@ async def insert_leaderboard_player(puuid, guild_id):
         return cursor.rowcount
 
 
+async def insert_subscribed_channel(guild_id, channel_id):
+    data = (guild_id, channel_id)
+    async with aiosqlite.connect("hextech.db") as db:
+        await db.execute(
+            """INSERT INTO subscribed_channels(guild_id, channel_id) 
+            VALUES(?, ?) 
+            ON CONFLICT(guild_id, channel_id) 
+            DO NOTHING""",
+            data,
+        )
+    await db.commit()
+
+
+async def get_suscribed_channels():
+    async with aiosqlite.connect("hextech.db") as db:
+        cursor = await db.execute(
+            """
+        SELECT guild_id, channel_id
+        FROM subscribed_channels"""
+        )
+        return await cursor.fetchall()
+
+
 if __name__ == "__main__":
     asyncio.run(init_db())
-    asyncio.run(upsert_player("your_puuid", "your_game_name", "your_tag_line"))
-    asyncio.run(
-        upsert_rank(
-            "your_puuid",
-            "RANKED_DUO_5X5",
-            "your_tier",
-            "your_rank",
-            75,
-        )
-    )
-    asyncio.run(
-        insert_rank_history(
-            "your_puuid",
-            "RANKED_DUO_5X5",
-            "your_last_tier",
-            "your_last_rank",
-            68,
-        )
-    )
-    asyncio.run(get_player("your_game_name", "your_tag_line"))
-    asyncio.run(get_rank("your_puuid", "RANKED_DUO_5X5"))
