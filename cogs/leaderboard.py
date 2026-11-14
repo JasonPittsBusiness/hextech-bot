@@ -38,7 +38,7 @@ LP_WIDTH = 4
 
 def _rank_sorter(player_rank):
     """Helper function to return tuple of ranked values for sorting on leaderboard"""
-    tier, rank, league_points = player_rank[2:]
+    tier, rank, league_points = player_rank[2:5]
     if tier is None:
         return -1, -1, -1
     tier = TIER_ORDER.index(tier)

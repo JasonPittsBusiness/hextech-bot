@@ -167,7 +167,7 @@ async def get_leaderboard_players(guild_id):
     async with aiosqlite.connect("hextech.db") as db:
         cursor = await db.execute(
             """
-        SELECT game_name, tag_line, tier, rank, league_points
+        SELECT game_name, tag_line, tier, rank, league_points, leaderboard_players.puuid
         FROM leaderboard_players
         LEFT OUTER JOIN ranks
         ON leaderboard_players.puuid = ranks.puuid
