@@ -49,6 +49,8 @@ def _rank_sorter(player_rank):
 async def _build_leaderboard(guild_id):
     """Builds a leaderboard from a given guild_id"""
     leaderboard_players = await database.get_leaderboard_players(guild_id)
+    if not leaderboard_players:
+        return "No players have been added to the !leaderboard for this server"
     leaderboard_players_sorted = sorted(
         leaderboard_players, key=_rank_sorter, reverse=True
     )
