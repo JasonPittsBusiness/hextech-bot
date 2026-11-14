@@ -35,6 +35,10 @@ RANK_WIDTH = len(max(RANK_ORDER, key=len))
 
 LP_WIDTH = 4
 
+LP_PER_TIER = 400
+
+LP_PER_RANK = 100
+
 
 def _rank_sorter(player_rank):
     """Helper function to return tuple of ranked values for sorting on leaderboard"""
@@ -44,6 +48,16 @@ def _rank_sorter(player_rank):
     tier = TIER_ORDER.index(tier)
     rank = RANK_ORDER.index(rank)
     return tier, rank, league_points
+
+
+def _get_rank_value(tier, rank, LP):
+    """Returns the total LP value of a rank for change in rank calculations"""
+    tier_value = TIER_ORDER.index(tier) * LP_PER_TIER
+    if tier in ("MASTER", "GRANDMASTER", "CHALLENGER"):
+        tier_value = TIER_ORDER.index("MASTER") * LP_PER_TIER
+        return tier_value + LP
+    rank_value = RANK_ORDER.index(rank) * LP_PER_RANK
+    return tier_value + rank_value + LP
 
 
 async def _build_leaderboard(guild_id):
@@ -142,8 +156,6 @@ class Leaderboard(commands.Cog):
     @daily_leaderboard.before_loop
     async def before_daily_leaderboard(self):
         await self.bot.wait_until_ready()
-
-    # time = datetime.time(hour=8, minute=30, tzinfo=datetime.timezone.utc)
 
 
 async def setup(bot):
