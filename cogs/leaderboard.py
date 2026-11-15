@@ -5,6 +5,7 @@ from zoneinfo import ZoneInfo
 from discord.ext import commands, tasks
 
 import database
+import riot_api
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +39,10 @@ LP_WIDTH = 4
 LP_PER_TIER = 400
 
 LP_PER_RANK = 100
+
+DAY = 24
+WEEK = DAY * 7
+MONTH = DAY * 30
 
 
 def _rank_sorter(player_rank):
@@ -82,12 +87,22 @@ async def _build_leaderboard(guild_id):
             )
             player_list.append(player_name_padded)
             continue
-        player_name_padded = f"{place:>{place_width}}. {player_name:<{name_width}} {player[2]:<{TIER_WIDTH}} {player[3]:<{RANK_WIDTH}} {player[4]:>{LP_WIDTH}} LP"
+        queue_type = riot_api.RIOT_QUEUES["solo"]
+        player_prev_rank = await database.get_rank_history(player[5], queue_type, 48)
+        tier, rank, lp = player_prev_rank
+        player_prev_rank_value = _get_rank_value(tier, rank, lp)
+        player_current_rank_value = _get_rank_value(player[2], player[3], player[4])
+        player_change_in_rank = player_current_rank_value - player_prev_rank_value
+        change_lp_width = len(max(str(player_change_in_rank), key=len))
+        player_name_padded = f"{place:>{place_width}}. {player_name:<{name_width}} {player[2]:<{TIER_WIDTH}} {player[3]:<{RANK_WIDTH}} {player[4]:>{LP_WIDTH}} LP {player_change_in_rank:>+{change_lp_width}}"
         player_list.append(player_name_padded)
-    header_width = len(max(player_list, key=len))
     leaderboard_title = "Ranked Leaderboard"
     leaderboard_content = "\n".join(player_list)
-    return f"```\n{leaderboard_title:^{header_width}}\n{leaderboard_content}\n```"
+    header_width = len(
+        f"{'':{place_width + 1}} {'':{name_width}} {'':{TIER_WIDTH}} {'':{RANK_WIDTH}} {'':{LP_WIDTH}}"
+    )
+    header = f"```\n{leaderboard_title:<{header_width}} {'24 hrs':>{change_lp_width}}\n{leaderboard_content}\n```"
+    return header
 
 
 class Leaderboard(commands.Cog):
