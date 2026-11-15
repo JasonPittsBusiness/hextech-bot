@@ -5,6 +5,7 @@ from zoneinfo import ZoneInfo
 from discord.ext import commands, tasks
 
 import database
+import riot_api
 
 logger = logging.getLogger(__name__)
 
@@ -35,15 +36,31 @@ RANK_WIDTH = len(max(RANK_ORDER, key=len))
 
 LP_WIDTH = 4
 
+LP_PER_TIER = 400
+
+LP_PER_RANK = 100
+
+CALENDAR = {"1 day": 24, "7 days": 168, "30 days": 720}
+
 
 def _rank_sorter(player_rank):
     """Helper function to return tuple of ranked values for sorting on leaderboard"""
-    tier, rank, league_points = player_rank[2:]
+    tier, rank, league_points = player_rank[2:5]
     if tier is None:
         return -1, -1, -1
     tier = TIER_ORDER.index(tier)
     rank = RANK_ORDER.index(rank)
     return tier, rank, league_points
+
+
+def _get_rank_value(tier, rank, LP):
+    """Returns the total LP value of a rank for change in rank calculations"""
+    tier_value = TIER_ORDER.index(tier) * LP_PER_TIER
+    if tier in ("MASTER", "GRANDMASTER", "CHALLENGER"):
+        tier_value = TIER_ORDER.index("MASTER") * LP_PER_TIER
+        return tier_value + LP
+    rank_value = RANK_ORDER.index(rank) * LP_PER_RANK
+    return tier_value + rank_value + LP
 
 
 async def _build_leaderboard(guild_id):
@@ -69,11 +86,33 @@ async def _build_leaderboard(guild_id):
             player_list.append(player_name_padded)
             continue
         player_name_padded = f"{place:>{place_width}}. {player_name:<{name_width}} {player[2]:<{TIER_WIDTH}} {player[3]:<{RANK_WIDTH}} {player[4]:>{LP_WIDTH}} LP"
+        queue_type = riot_api.RIOT_QUEUES["solo"]
+        for c in CALENDAR:
+            changes_in_rank = []
+            previous_rank_value = await database.get_rank_history(
+                player[5], queue_type, CALENDAR[c]
+            )
+            if previous_rank_value is None:
+                player_change_in_rank = 0
+            else:
+                tier, rank, lp = previous_rank_value
+                player_prev_rank_value = _get_rank_value(tier, rank, lp)
+                player_current_rank_value = _get_rank_value(
+                    player[2], player[3], player[4]
+                )
+                player_change_in_rank = (
+                    player_current_rank_value - player_prev_rank_value
+                )
+            player_name_padded += f" {player_change_in_rank:>+{len(c)}}"
+        changes_in_rank.append(player_change_in_rank)
         player_list.append(player_name_padded)
-    header_width = len(max(player_list, key=len))
     leaderboard_title = "Ranked Leaderboard"
     leaderboard_content = "\n".join(player_list)
-    return f"```\n{leaderboard_title:^{header_width}}\n{leaderboard_content}\n```"
+    header_width = len(
+        f"{'':{place_width + 1}} {'':{name_width}} {'':{TIER_WIDTH}} {'':{RANK_WIDTH}} {'':{LP_WIDTH}} LP"
+    )
+    header = f"```\n{leaderboard_title:<{header_width}} {'1 day':>{len('1 day')}} {'7 days':>{len('7 days')}} {'30 days':>{len('30 days')}}\n{leaderboard_content}\n```"
+    return header
 
 
 class Leaderboard(commands.Cog):
@@ -142,8 +181,6 @@ class Leaderboard(commands.Cog):
     @daily_leaderboard.before_loop
     async def before_daily_leaderboard(self):
         await self.bot.wait_until_ready()
-
-    # time = datetime.time(hour=8, minute=30, tzinfo=datetime.timezone.utc)
 
 
 async def setup(bot):

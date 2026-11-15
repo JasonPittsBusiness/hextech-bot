@@ -142,12 +142,32 @@ async def insert_rank_history(puuid, queue_type, tier, rank, league_points):
         await db.commit()
 
 
+async def get_rank_history(puuid, queue_type, hours):
+    """Returns the player rank in a queue as of so many hours ago"""
+    async with aiosqlite.connect("hextech.db") as db:
+        data = (puuid, queue_type, f"-{hours} hours")
+        cursor = await db.execute(
+            """SELECT tier, rank, league_points
+                    FROM rank_history
+                    WHERE puuid = ?
+                    AND queue_type = ?
+                    AND updated_at < datetime('now', ?)
+                    ORDER BY updated_at DESC
+                    LIMIT 1""",
+            data,
+        )
+        row = await cursor.fetchone()
+        if row is None:
+            return None
+        return row
+
+
 async def get_leaderboard_players(guild_id):
     data = (guild_id,)
     async with aiosqlite.connect("hextech.db") as db:
         cursor = await db.execute(
             """
-        SELECT game_name, tag_line, tier, rank, league_points
+        SELECT game_name, tag_line, tier, rank, league_points, leaderboard_players.puuid
         FROM leaderboard_players
         LEFT OUTER JOIN ranks
         ON leaderboard_players.puuid = ranks.puuid
