@@ -88,9 +88,17 @@ async def _build_leaderboard(guild_id):
             player_list.append(player_name_padded)
             continue
         queue_type = riot_api.RIOT_QUEUES["solo"]
-        player_prev_rank = await database.get_rank_history(player[5], queue_type, 48)
-        tier, rank, lp = player_prev_rank
+        player_prev_rank_day = await database.get_rank_history(
+            player[5], queue_type, DAY
+        )
+        tier, rank, lp = player_prev_rank_day
         player_prev_rank_value = _get_rank_value(tier, rank, lp)
+        player_prev_rank_week = await database.get_rank_history(
+            player[5], queue_type, WEEK
+        )
+        player_prev_rank_month = await database.get_rank_history(
+            player[5], queue_type, MONTH
+        )
         player_current_rank_value = _get_rank_value(player[2], player[3], player[4])
         player_change_in_rank = player_current_rank_value - player_prev_rank_value
         change_lp_width = len(max(str(player_change_in_rank), key=len))
