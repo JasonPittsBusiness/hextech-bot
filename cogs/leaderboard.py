@@ -178,6 +178,10 @@ class Leaderboard(commands.Cog):
             except Exception:
                 logger.exception("Subscribed channel is not valid")
 
+    @tasks.loop(minutes=20.0)
+    async def update_leaderboard(self):
+        pass
+
     @daily_leaderboard.before_loop
     async def before_daily_leaderboard(self):
         await self.bot.wait_until_ready()
