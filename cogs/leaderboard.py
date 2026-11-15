@@ -6,6 +6,7 @@ from discord.ext import commands, tasks
 
 import database
 import riot_api
+from cogs import rank
 
 logger = logging.getLogger(__name__)
 
@@ -119,9 +120,11 @@ class Leaderboard(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.daily_leaderboard.start()
+        self.update_leaderboard.start()
 
     def cog_unload(self):
         self.daily_leaderboard.cancel()
+        self.update_leaderboard.cancel()
 
     @commands.hybrid_group()
     async def leaderboard(self, ctx):
@@ -169,6 +172,7 @@ class Leaderboard(commands.Cog):
 
     @tasks.loop(time=POST_TIME)
     async def daily_leaderboard(self):
+        await self.update_leaderboard()
         subscribed_channels = await database.get_suscribed_channels()
         for guild in subscribed_channels:
             try:
@@ -178,9 +182,13 @@ class Leaderboard(commands.Cog):
             except Exception:
                 logger.exception("Subscribed channel is not valid")
 
-    @tasks.loop(minutes=20.0)
+    @tasks.loop(minutes=20)
     async def update_leaderboard(self):
-        pass
+        update_players = await database.get_distinct_leaderboard_players()
+        for update in update_players:
+            (puuid,) = update
+            rank.update_ranks(puuid)
+            logger.info(f"Updating {puuid}")
 
     @daily_leaderboard.before_loop
     async def before_daily_leaderboard(self):
