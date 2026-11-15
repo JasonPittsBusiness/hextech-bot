@@ -5,21 +5,58 @@ import database
 import riot_api
 
 
+async def update_ranks(puuid, queue_type=riot_api.RIOT_QUEUES["solo"]):
+    """Updates a players ranks in the database if there are changes always hits Riot API"""
+    rank_data = await riot_api.get_rank_data(puuid)
+    for rank in rank_data:
+        old_rank_data = await database.get_rank(
+            puuid, rank["queueType"], stale_check=False
+        )
+        new_rank_data = (
+            rank["tier"],
+            rank["rank"],
+            rank["leaguePoints"],
+        )
+        return_rank_data = None
+        if queue_type == rank["queueType"]:
+            return_rank_data = (
+                rank["tier"],
+                rank["rank"],
+                rank["leaguePoints"],
+            )
+        if old_rank_data != new_rank_data:
+            await database.upsert_rank(
+                puuid,
+                rank["queueType"],
+                rank["tier"],
+                rank["rank"],
+                rank["leaguePoints"],
+            )
+            await database.insert_rank_history(
+                puuid,
+                rank["queueType"],
+                rank["tier"],
+                rank["rank"],
+                rank["leaguePoints"],
+            )
+
+    return return_rank_data
+
+
 class Rank(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.hybrid_command(usage="<name#tag> [queue]")
-    async def rank(self, ctx, *, message: str):
+    @commands.hybrid_command(usage="<name#tag> [queue_type]")
+    async def rank(self, ctx, *, message: str, queue_type="solo"):
         """Returns the rank of a player in a specified queue
         Use the format !rank \"name#tag\" solo, flex, premade, or 5s"""
         try:
             game_name, tag_line = message.split("#")
             tag_parts = tag_line.split()
-            queue = "solo"
             if len(tag_parts) > 1:
-                tag_line, queue = tag_parts
-            queue_type = riot_api.RIOT_QUEUES[queue]
+                tag_line, queue_type = tag_parts
+            queue_type = riot_api.RIOT_QUEUES[queue_type]
         except (ValueError, KeyError):
             await ctx.send(
                 f"'{message}' is not a valid format. Use !rank \"name#tag\" solo, flex, premade, or 5s"
@@ -46,30 +83,13 @@ class Rank(commands.Cog):
             puuid, game_name, tag_line = player
         rank_data = await database.get_rank(puuid, queue_type)
         if rank_data is None:
-            rank_data = await riot_api.get_rank_data(puuid)
-            for rank in rank_data:
-                old_rank_data = await database.get_rank(
-                    puuid, rank["queueType"], stale_check=False
-                )
-                await database.upsert_rank(
-                    puuid,
-                    rank["queueType"],
-                    rank["tier"],
-                    rank["rank"],
-                    rank["leaguePoints"],
-                )
-                new_rank_data = await database.get_rank(puuid, rank["queueType"])
-                if new_rank_data != old_rank_data:
-                    await database.insert_rank_history(
-                        puuid, rank["queueType"], *new_rank_data
-                    )
-        rank_data = await database.get_rank(puuid, queue_type)
+            rank_data = await update_ranks(puuid, queue_type)
         if rank_data is None:
-            await ctx.send(f"{message} is currently unranked in {queue}")
+            await ctx.send(f"{message} is currently unranked in {queue_type}")
             return
         tier, rank, leaguepoints = rank_data
         await ctx.send(
-            f"{game_name}#{tag_line} is currently {tier} {rank} {leaguepoints} LP in {queue}"
+            f"{game_name}#{tag_line} is currently {tier} {rank} {leaguepoints} LP in {queue_type}"
         )
 
     @commands.hybrid_command(usage="<discord_user> <name#tag>")
