@@ -163,6 +163,7 @@ async def get_rank_history(puuid, queue_type, hours):
 
 
 async def get_leaderboard_players(guild_id):
+    """Get leaderboard players for a given guild"""
     data = (guild_id,)
     async with aiosqlite.connect("hextech.db") as db:
         cursor = await db.execute(
@@ -176,6 +177,17 @@ async def get_leaderboard_players(guild_id):
         ON leaderboard_players.puuid = players.puuid
         WHERE guild_id = ?""",
             data,
+        )
+        return await cursor.fetchall()
+
+
+async def get_distinct_leaderboard_players():
+    """Returns all unique players on the leaderboard"""
+    async with aiosqlite.connect("hextech.db") as db:
+        cursor = await db.execute(
+            """SELECT DISTINCT puuid
+            FROM leaderboard_players
+            """,
         )
         return await cursor.fetchall()
 

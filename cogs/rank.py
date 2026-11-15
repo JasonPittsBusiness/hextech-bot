@@ -5,7 +5,7 @@ import database
 import riot_api
 
 
-async def update_ranks(puuid, queue_type):
+async def update_ranks(puuid, queue_type=riot_api.RIOT_QUEUES["solo"]):
     """Updates a players ranks in the database if there are changes always hits Riot API"""
     rank_data = await riot_api.get_rank_data(puuid)
     for rank in rank_data:
