@@ -40,9 +40,7 @@ LP_PER_TIER = 400
 
 LP_PER_RANK = 100
 
-DAY = 24
-WEEK = DAY * 7
-MONTH = DAY * 30
+CALENDAR = {"1 day": 24, "7 days": 168, "30 days": 720}
 
 
 def _rank_sorter(player_rank):
@@ -87,29 +85,33 @@ async def _build_leaderboard(guild_id):
             )
             player_list.append(player_name_padded)
             continue
+        player_name_padded = f"{place:>{place_width}}. {player_name:<{name_width}} {player[2]:<{TIER_WIDTH}} {player[3]:<{RANK_WIDTH}} {player[4]:>{LP_WIDTH}} LP"
         queue_type = riot_api.RIOT_QUEUES["solo"]
-        player_prev_rank_day = await database.get_rank_history(
-            player[5], queue_type, DAY
-        )
-        tier, rank, lp = player_prev_rank_day
-        player_prev_rank_value = _get_rank_value(tier, rank, lp)
-        player_prev_rank_week = await database.get_rank_history(
-            player[5], queue_type, WEEK
-        )
-        player_prev_rank_month = await database.get_rank_history(
-            player[5], queue_type, MONTH
-        )
-        player_current_rank_value = _get_rank_value(player[2], player[3], player[4])
-        player_change_in_rank = player_current_rank_value - player_prev_rank_value
-        change_lp_width = len(max(str(player_change_in_rank), key=len))
-        player_name_padded = f"{place:>{place_width}}. {player_name:<{name_width}} {player[2]:<{TIER_WIDTH}} {player[3]:<{RANK_WIDTH}} {player[4]:>{LP_WIDTH}} LP {player_change_in_rank:>+{change_lp_width}}"
+        for c in CALENDAR:
+            changes_in_rank = []
+            previous_rank_value = await database.get_rank_history(
+                player[5], queue_type, CALENDAR[c]
+            )
+            if previous_rank_value is None:
+                player_change_in_rank = 0
+            else:
+                tier, rank, lp = previous_rank_value
+                player_prev_rank_value = _get_rank_value(tier, rank, lp)
+                player_current_rank_value = _get_rank_value(
+                    player[2], player[3], player[4]
+                )
+                player_change_in_rank = (
+                    player_current_rank_value - player_prev_rank_value
+                )
+            player_name_padded += f" {player_change_in_rank:>+{len(c)}}"
+        changes_in_rank.append(player_change_in_rank)
         player_list.append(player_name_padded)
     leaderboard_title = "Ranked Leaderboard"
     leaderboard_content = "\n".join(player_list)
     header_width = len(
-        f"{'':{place_width + 1}} {'':{name_width}} {'':{TIER_WIDTH}} {'':{RANK_WIDTH}} {'':{LP_WIDTH}}"
+        f"{'':{place_width + 1}} {'':{name_width}} {'':{TIER_WIDTH}} {'':{RANK_WIDTH}} {'':{LP_WIDTH}} LP"
     )
-    header = f"```\n{leaderboard_title:<{header_width}} {'24 hrs':>{change_lp_width}}\n{leaderboard_content}\n```"
+    header = f"```\n{leaderboard_title:<{header_width}} {'1 day':>{len('1 day')}} {'7 days':>{len('7 days')}} {'30 days':>{len('30 days')}}\n{leaderboard_content}\n```"
     return header
 
 
