@@ -187,7 +187,7 @@ class Leaderboard(commands.Cog):
         update_players = await database.get_distinct_leaderboard_players()
         for update in update_players:
             (puuid,) = update
-            rank.update_ranks(puuid)
+            await rank.update_ranks(puuid)
             logger.info(f"Updating {puuid}")
 
     @daily_leaderboard.before_loop
