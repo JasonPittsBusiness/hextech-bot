@@ -189,7 +189,7 @@ class Leaderboard(commands.Cog):
         for update in update_players:
             (puuid,) = update
             await rank.update_ranks(puuid)
-            logger.info(f"Updating {puuid}")
+        logger.info(f"Updated len{update_players}")
 
     @daily_leaderboard.before_loop
     async def before_daily_leaderboard(self):
