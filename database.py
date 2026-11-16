@@ -158,6 +158,25 @@ async def get_rank_history(puuid, queue_type, hours):
         )
         row = await cursor.fetchone()
         if row is None:
+            return await get_oldest_rank_history(puuid, queue_type)
+        return row
+
+
+async def get_oldest_rank_history(puuid, queue_type):
+    """Returns the oldest player rank in a queue"""
+    async with aiosqlite.connect("hextech.db") as db:
+        data = (puuid, queue_type)
+        cursor = await db.execute(
+            """SELECT tier, rank, league_points
+                    FROM rank_history
+                    WHERE puuid = ?
+                    AND queue_type = ?
+                    ORDER BY updated_at ASC
+                    LIMIT 1""",
+            data,
+        )
+        row = await cursor.fetchone()
+        if row is None:
             return None
         return row
 
