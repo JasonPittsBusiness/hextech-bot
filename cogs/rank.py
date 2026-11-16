@@ -3,6 +3,7 @@ from discord.ext import commands
 
 import database
 import riot_api
+import utils
 
 
 async def update_ranks(puuid, queue_type=riot_api.RIOT_QUEUES["solo"]):
@@ -52,10 +53,7 @@ class Rank(commands.Cog):
         """Returns the rank of a player in a specified queue
         Use the format !rank \"name#tag\" solo, flex, premade, or 5s"""
         try:
-            game_name, tag_line = message.split("#")
-            tag_parts = tag_line.split()
-            if len(tag_parts) > 1:
-                tag_line, queue_type = tag_parts
+            game_name, tag_line, queue_type = utils.parse_riot_id(message)
             queue_type = riot_api.RIOT_QUEUES[queue_type]
         except (ValueError, KeyError):
             await ctx.send(

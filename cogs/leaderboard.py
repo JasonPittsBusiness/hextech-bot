@@ -6,6 +6,7 @@ from discord.ext import commands, tasks
 
 import database
 import riot_api
+import utils
 from cogs import rank
 
 logger = logging.getLogger(__name__)
@@ -137,7 +138,7 @@ class Leaderboard(commands.Cog):
     async def add(self, ctx, *, message: str):
         """Add a player to the leaderboard in this server"""
         try:
-            game_name, tag_line = message.split("#")
+            game_name, tag_line, _ = utils.parse_riot_id(message)
         except ValueError:
             await ctx.send(
                 f"{ctx.message.content} is not a valid format. Use !leaderboard add name#tag"
@@ -189,7 +190,7 @@ class Leaderboard(commands.Cog):
         for update in update_players:
             (puuid,) = update
             await rank.update_ranks(puuid)
-        logger.info(f"Updated {len(update_players)}")
+        logger.info(f"Updated {len(update_players)} leaderboard players")
 
     @daily_leaderboard.before_loop
     async def before_daily_leaderboard(self):

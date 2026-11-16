@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 AMERICAS_BASE_URL = "https://americas.api.riotgames.com"
 NA1_BASE_URL = "https://na1.api.riotgames.com"
 
+DEFAULT_QUEUE = "solo"
 
 RIOT_QUEUES = {
     "solo": "RANKED_SOLO_5x5",
