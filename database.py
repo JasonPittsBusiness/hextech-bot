@@ -226,6 +226,20 @@ async def insert_leaderboard_player(puuid, guild_id):
         return cursor.rowcount
 
 
+async def delete_leaderboard_player(puuid, guild_id):
+    async with aiosqlite.connect("hextech.db") as db:
+        data = (puuid, guild_id)
+        cursor = await db.execute(
+            """DELETE FROM leaderboard_players
+            WHERE puuid = ?
+            AND guild_id = ?
+            """,
+            data,
+        )
+        await db.commit()
+        return cursor.rowcount
+
+
 async def insert_subscribed_channel(guild_id, channel_id):
     data = (guild_id, channel_id)
     async with aiosqlite.connect("hextech.db") as db:
