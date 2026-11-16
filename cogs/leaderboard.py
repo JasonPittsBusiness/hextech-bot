@@ -41,7 +41,7 @@ LP_PER_TIER = 400
 
 LP_PER_RANK = 100
 
-CALENDAR = {"1 day": 24, "7 days": 168, "30 days": 720}
+CALENDAR = {"1 day": 24, "7 days": 168, "30 days": 720, "all time": 1000000}
 
 
 def _rank_sorter(player_rank):
@@ -112,7 +112,8 @@ async def _build_leaderboard(guild_id):
     header_width = len(
         f"{'':{place_width + 1}} {'':{name_width}} {'':{TIER_WIDTH}} {'':{RANK_WIDTH}} {'':{LP_WIDTH}} LP"
     )
-    header = f"```\n{leaderboard_title:<{header_width}} {'1 day':>{len('1 day')}} {'7 days':>{len('7 days')}} {'30 days':>{len('30 days')}}\n{leaderboard_content}\n```"
+    # TODO loop to create header
+    header = f"```\n{leaderboard_title:<{header_width}} {'1 day':>{len('1 day')}} {'7 days':>{len('7 days')}} {'30 days':>{len('30 days')}} {'all time':>{len('all time')}}\n{leaderboard_content}\n```"
     return header
 
 
