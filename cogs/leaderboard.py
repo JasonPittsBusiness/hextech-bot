@@ -157,6 +157,29 @@ class Leaderboard(commands.Cog):
             return
         await ctx.send(f"{game_name}#{tag_line} is already on the !leaderboard")
 
+    @leaderboard.command(usage="<name#tag>")
+    async def remove(self, ctx, *, message: str):
+        """Remove a player from the leaderboard in this server"""
+        try:
+            game_name, tag_line, _ = utils.parse_riot_id(message)
+        except ValueError:
+            await ctx.send(
+                f"{ctx.message.content} is not a valid format. Use !leaderboard add name#tag"
+            )
+            return
+        player = await database.get_player(game_name, tag_line)
+        if player is None:
+            await ctx.send(
+                f"{game_name}#{tag_line} was not found. Use !rank to add a player to the database"
+            )
+            return
+        puuid, game_name, tag_line = player
+        result = await database.delete_leaderboard_player(puuid, ctx.guild.id)
+        if result > 0:
+            await ctx.send(f"{game_name}#{tag_line} was removed from the !leaderboard")
+            return
+        await ctx.send(f"{game_name}#{tag_line} is not on the !leaderboard")
+
     @leaderboard.command()
     async def subscribe(self, ctx):
         """Subscribe the current channel to the daily leadboard"""

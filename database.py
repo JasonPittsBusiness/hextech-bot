@@ -227,11 +227,11 @@ async def insert_leaderboard_player(puuid, guild_id):
 
 
 async def delete_leaderboard_player(puuid, guild_id):
-    data = (puuid, guild_id)
     async with aiosqlite.connect("hextech.db") as db:
+        data = (puuid, guild_id)
         cursor = await db.execute(
             """DELETE FROM leaderboard_players
-            WHERE puuid = ?,
+            WHERE puuid = ?
             AND guild_id = ?
             """,
             data,
